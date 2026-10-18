@@ -10,6 +10,7 @@ import { env } from './lib/env.js';
 import { prisma } from './lib/prisma.js';
 // Routes
 import authRouter from './routes/auth.routes.js';
+import { authorization } from './middleware/authorization.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -20,7 +21,7 @@ app.use(express.json());
 
 app.use('/api/v1/auth/', authRouter);
 
-app.get('/api/v1', (_req, res) => {
+app.get('/api/v1', authorization, (_req, res) => {
   res.status(200).json({
     'health status': 'healthy',
   });
