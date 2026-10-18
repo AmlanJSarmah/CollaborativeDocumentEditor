@@ -1,5 +1,5 @@
 import express from 'express';
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { treeifyError, ZodError } from 'zod';
 import { createServer } from 'node:http';
 import { AppError } from './lib/error.js';
@@ -27,7 +27,7 @@ app.get('/api/v1', (_req, res) => {
 });
 
 // Global Error Handling
-app.use((error: unknown, _req: Request, res: Response) => {
+app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (error instanceof ZodError) {
     return res.status(400).json({
       message: 'Validation failed',
@@ -39,7 +39,7 @@ app.use((error: unknown, _req: Request, res: Response) => {
       message: error.message,
     });
   }
-  console.error('ERROR : Internal Server Error');
+  console.error(error);
   res.status(500).json({ message: 'Internal Server Error' });
 });
 
