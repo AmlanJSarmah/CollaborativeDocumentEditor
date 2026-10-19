@@ -9,12 +9,15 @@ import { env } from './lib/env.js';
 // Prisma and Redis
 import { prisma } from './lib/prisma.js';
 import { redis } from './lib/redis.js';
+// WebSockets
+import { initSocket } from './sockets/index.js';
 // Routes
 import authRouter from './routes/auth.routes.js';
 import { authorization } from './middleware/authorization.js';
 
 const app = express();
 const httpServer = createServer(app);
+const io = initSocket(httpServer);
 let isShuttingDown = false;
 
 // Register Routes
@@ -34,6 +37,15 @@ redis.on('connect', () => {
 });
 redis.on('error', error => {
   console.error('ERROR: Redis error', error);
+});
+
+// Sockets
+io.on('connection', socket => {
+  console.info(`INFO: Client connected via socket ${socket.id}`);
+
+  socket.on('disconnect', () => {
+    console.info(`INFO: Client disconneced ${socket.id}`);
+  });
 });
 
 // Global Error Handling
@@ -79,6 +91,7 @@ async function shutdown(signal: string): Promise<void> {
   // Disconnect Prisma after requests have drained.
   await prisma.$disconnect();
   await redis.quit();
+  await io.close();
   console.info('INFO: Server shut down successfully');
 }
 
@@ -96,6 +109,7 @@ startServer().catch(async (error: unknown) => {
   try {
     await prisma.$disconnect();
     await redis.quit();
+    await io.close();
   } catch (disconnectError) {
     console.error(
       'ERROR: Failed to disconnect Prisma or Redis',
