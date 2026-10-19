@@ -7,3 +7,8 @@ export const createNoteSchema = z.object({
 export const deleteNoteSchema = z.object({
   noteId: z.string(),
 });
+
+export const grantAccessSchema = z.object({
+  userEmail: z.string(),
+  noteId: z.string(),
+});
