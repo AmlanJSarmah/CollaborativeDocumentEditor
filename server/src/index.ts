@@ -6,8 +6,9 @@ import { AppError } from './lib/error.js';
 // ENV
 import './lib/env.js';
 import { env } from './lib/env.js';
-// Prisma
+// Prisma and Redis
 import { prisma } from './lib/prisma.js';
+import { redis } from './lib/redis.js';
 // Routes
 import authRouter from './routes/auth.routes.js';
 import { authorization } from './middleware/authorization.js';
@@ -25,6 +26,14 @@ app.get('/api/v1', authorization, (_req, res) => {
   res.status(200).json({
     'health status': 'healthy',
   });
+});
+
+// Redis
+redis.on('connect', () => {
+  console.info('INFO: Redis connected');
+});
+redis.on('error', error => {
+  console.error('ERROR: Redis error', error);
 });
 
 // Global Error Handling
@@ -69,6 +78,7 @@ async function shutdown(signal: string): Promise<void> {
   }
   // Disconnect Prisma after requests have drained.
   await prisma.$disconnect();
+  await redis.quit();
   console.info('INFO: Server shut down successfully');
 }
 
@@ -85,8 +95,12 @@ startServer().catch(async (error: unknown) => {
   console.error('FATAL: Failed to start server', error);
   try {
     await prisma.$disconnect();
+    await redis.quit();
   } catch (disconnectError) {
-    console.error('ERROR: Failed to disconnect Prisma', disconnectError);
+    console.error(
+      'ERROR: Failed to disconnect Prisma or Redis',
+      disconnectError
+    );
   }
   process.exitCode = 1;
 });
