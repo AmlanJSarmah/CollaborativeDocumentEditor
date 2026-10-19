@@ -11,7 +11,8 @@ export const signInSchema = z.object({
   password: z.string(),
 });
 
-export const jwtVerifySchema = z.object({
+// User With JWT TOken verified stored in request
+export const authorizedUserSchmea = z.object({
   email: z.string(),
   id: z.string(),
 });

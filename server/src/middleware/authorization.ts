@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../lib/env.js';
 import { AppError } from '../lib/error.js';
-import { jwtVerifySchema } from '../schemas/auth.schema.js';
+import { authorizedUserSchmea } from '../schemas/auth.schema.js';
 
 export const authorization = (
   req: Request,
@@ -12,7 +12,7 @@ export const authorization = (
   try {
     const header = req.headers.authorization;
     if (!header) throw new Error();
-    const user = jwtVerifySchema.parse(
+    const user = authorizedUserSchmea.parse(
       jwt.verify(header.split(' ')[1], env.JWT_PRIVATE_KEY)
     );
     req.authorizedUser = user;
