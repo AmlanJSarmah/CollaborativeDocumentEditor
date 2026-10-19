@@ -10,10 +10,16 @@ import {
   getAllNotesService,
   grantAccessService,
 } from '../services/notes.services.js';
+import type {
+  CreateNoteResponse,
+  DeleteNoteResponse,
+  GrantAccessResponse,
+  GetAllNotesResponse,
+} from '../types/notes.types.js';
 
 export const createNoteController = async (
   req: Request,
-  res: Response,
+  res: Response<CreateNoteResponse>,
   next: NextFunction
 ) => {
   try {
@@ -27,7 +33,7 @@ export const createNoteController = async (
 
 export const deleteNoteController = async (
   req: Request,
-  res: Response,
+  res: Response<DeleteNoteResponse>,
   next: NextFunction
 ) => {
   try {
@@ -41,7 +47,7 @@ export const deleteNoteController = async (
 
 export const grantAccessController = async (
   req: Request,
-  res: Response,
+  res: Response<GrantAccessResponse>,
   next: NextFunction
 ) => {
   try {
@@ -55,7 +61,7 @@ export const grantAccessController = async (
 
 export const getAllNotesController = async (
   req: Request,
-  res: Response,
+  res: Response<GetAllNotesResponse>,
   next: NextFunction
 ) => {
   try {

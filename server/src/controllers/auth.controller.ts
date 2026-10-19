@@ -1,10 +1,15 @@
 import type { NextFunction, Request, Response } from 'express';
 import { signUpSchema, signInSchema } from '../schemas/auth.schema.js';
 import { signInService, signUpService } from '../services/auth.service.js';
+import type {
+  SignInResponse,
+  SignUp,
+  SignUpResponse,
+} from '../types/auth.types.js';
 
 export const signUpController = async (
   req: Request,
-  res: Response,
+  res: Response<SignUpResponse>,
   next: NextFunction
 ) => {
   try {
@@ -24,7 +29,7 @@ export const signUpController = async (
 
 export const signInController = async (
   req: Request,
-  res: Response,
+  res: Response<SignInResponse>,
   next: NextFunction
 ) => {
   try {

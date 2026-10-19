@@ -3,19 +3,9 @@ import { prisma } from '../lib/prisma.js';
 import { hash, compare } from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../lib/env.js';
+import { User, SignIn, SignUp } from '../types/auth.types.js';
 
-type userSignUpType = {
-  username: string;
-  email: string;
-  password: string;
-};
-
-type userSignInType = {
-  email: string;
-  password: string;
-};
-
-export const signUpService = async (userData: userSignUpType) => {
+export const signUpService = async (userData: SignUp): Promise<User> => {
   // check if user already exists
   const userWithSameEmail = await prisma.user.findUnique({
     where: {
@@ -46,7 +36,7 @@ export const signUpService = async (userData: userSignUpType) => {
   }
 };
 
-export const signInService = async (userData: userSignInType) => {
+export const signInService = async (userData: SignIn) => {
   //check if user exist
   const user = await prisma.user.findUnique({
     where: {

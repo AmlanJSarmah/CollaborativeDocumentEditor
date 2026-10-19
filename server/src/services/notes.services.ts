@@ -1,11 +1,11 @@
-import { z } from 'zod';
-import { authorizedUserSchmea } from '../schemas/auth.schema.js';
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../lib/error.js';
+import type { User, Note } from '../types/notes.types.js';
 
-type User = z.infer<typeof authorizedUserSchmea>;
-
-export const createNoteService = async (title: string, user: User) => {
+export const createNoteService = async (
+  title: string,
+  user: User
+): Promise<Note> => {
   const note = await prisma.note.create({
     data: {
       title: title,
@@ -88,7 +88,7 @@ export const grantAccessService = async (
 };
 
 export const getAllNotesService = async (user: User) => {
-  const createdNotes = await prisma.note.findMany({
+  const createdNotes: Note[] = await prisma.note.findMany({
     where: {
       creatorId: user.id,
     },
@@ -98,7 +98,7 @@ export const getAllNotesService = async (user: User) => {
       userId: user.id,
     },
   });
-  let grantedNotes: any = [];
+  let grantedNotes: Note[] = [];
   for (const note of grantedNotesList) {
     grantedNotes.push(
       await prisma.note.findUnique({
@@ -108,6 +108,7 @@ export const getAllNotesService = async (user: User) => {
       })
     );
   }
+
   return {
     createdNotes: createdNotes,
     grantedNotes: grantedNotes,
