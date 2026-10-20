@@ -53,6 +53,13 @@ io.on('connection', async socket => {
     console.info(`INFO: Client disconneced ${socket.id}`);
     if (socket.data.heldLocks) {
       for (const lockedNoteId of socket.data.heldLocks) {
+        const note = await JSON.parse(
+          (await redis.get(`note:${lockedNoteId}`))!
+        );
+        await prisma.note.update({
+          where: { id: lockedNoteId },
+          data: { data: note.data },
+        });
         await redis.del(`lock:note:${lockedNoteId}`);
         io.to(`note:${lockedNoteId}`).emit('lock:released', {
           noteId: lockedNoteId,

@@ -1,5 +1,6 @@
 import type { Socket, Server } from 'socket.io';
 import { redis } from '../../lib/redis.js';
+import { prisma } from '../../lib/prisma.js';
 
 export const registerNoteHandler = (io: Server, socket: Socket) => {
   socket.on('note:join', async (data: { noteId: string }) => {
@@ -56,12 +57,35 @@ export const registerNoteHandler = (io: Server, socket: Socket) => {
     if (!data?.noteId) return;
     const { noteId } = data;
     const holder = await redis.get(`lock:note:${noteId}`);
-    console.log('Here');
     if (holder == socket.data.user.id) {
-      console.log('Here');
+      const note = await JSON.parse((await redis.get(`note:${noteId}`))!);
+      await prisma.note.update({
+        where: { id: noteId },
+        data: { data: note.data },
+      });
       await redis.del(`lock:note:${noteId}`);
       socket.data.heldLocks.delete(noteId);
       io.to(`note:${noteId}`).emit('lock:released', { noteId });
     }
   });
+
+  socket.on(
+    'note:update',
+    async (data: { noteId: string; content: string }) => {
+      if (!data?.noteId || typeof data.content !== 'string') return;
+      const { noteId, content } = data;
+      const holder = await redis.get(`lock:note:${noteId}`);
+      if (holder != socket.data.user.id) {
+        socket.emit('update:failed', { noteId });
+      } else {
+        const note = JSON.parse((await redis.get(`note:${noteId}`))!);
+        note.data = content;
+        await redis.set(`note:${noteId}`, JSON.stringify(note));
+        socket.to(`note:${noteId}`).emit('note:updated', {
+          noteId,
+          content,
+        });
+      }
+    }
+  );
 };
