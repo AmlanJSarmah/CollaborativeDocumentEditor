@@ -119,9 +119,35 @@ export function NoteEditor() {
 
   useEffect(() => {
     if (!canEdit) return
-    const timer = window.setInterval(() => socketRef.current?.emit("lock:heartbeat", { noteId }), 3000)
-    return () => window.clearInterval(timer)
+    const heartbeat = () => socketRef.current?.emit("lock:heartbeat", { noteId })
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        heartbeat()
+        socketRef.current?.emit("note:join", { noteId })
+      }
+    }
+    heartbeat()
+    document.addEventListener("visibilitychange", onVisibilityChange)
+    const timer = window.setInterval(heartbeat, 3000)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
+    }
   }, [canEdit, noteId])
+
+  useEffect(() => {
+    if (!connected || ownsLock) return
+    const resyncLockStatus = () => socketRef.current?.emit("note:join", { noteId })
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") resyncLockStatus()
+    }
+    const timer = window.setInterval(resyncLockStatus, 5000)
+    document.addEventListener("visibilitychange", onVisibilityChange)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
+    }
+  }, [connected, noteId, ownsLock])
 
   useEffect(() => {
     if (!canEdit || !dirty) return
