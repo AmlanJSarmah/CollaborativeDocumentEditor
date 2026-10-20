@@ -44,12 +44,21 @@ redis.on('error', error => {
 });
 
 // Sockets
-io.on('connection', socket => {
+io.on('connection', async socket => {
   console.info(`INFO: Client connected via socket ${socket.id}`);
+  socket.data.heldLocks = socket.data.heldLocks || new Set<string>();
   registerNoteHandler(io, socket);
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     console.info(`INFO: Client disconneced ${socket.id}`);
+    if (socket.data.heldLocks) {
+      for (const lockedNoteId of socket.data.heldLocks) {
+        await redis.del(`lock:note:${lockedNoteId}`);
+        io.to(`note:${lockedNoteId}`).emit('lock:released', {
+          noteId: lockedNoteId,
+        });
+      }
+    }
   });
 });
 
