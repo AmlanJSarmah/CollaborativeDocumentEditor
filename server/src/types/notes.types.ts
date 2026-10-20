@@ -34,3 +34,8 @@ export type GetAllNotesResponse = {
     grantedNotes: Note[];
   };
 };
+
+export type GetNoteResponse = {
+  message: string;
+  note: Note;
+};

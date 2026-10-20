@@ -2,12 +2,14 @@ import type { Request, Response, NextFunction } from 'express';
 import {
   createNoteSchema,
   deleteNoteSchema,
+  getNoteSchema,
   grantAccessSchema,
 } from '../schemas/notes.schema.js';
 import {
   createNoteService,
   deleteNoteService,
   getAllNotesService,
+  getNoteService,
   grantAccessService,
 } from '../services/notes.services.js';
 import type {
@@ -15,6 +17,7 @@ import type {
   DeleteNoteResponse,
   GrantAccessResponse,
   GetAllNotesResponse,
+  GetNoteResponse,
 } from '../types/notes.types.js';
 
 export const createNoteController = async (
@@ -67,6 +70,20 @@ export const getAllNotesController = async (
   try {
     const notes = await getAllNotesService(req.authorizedUser!);
     res.status(200).json({ message: 'Query Success', notes });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getNoteController = async (
+  req: Request,
+  res: Response<GetNoteResponse>,
+  next: NextFunction
+) => {
+  try {
+    const { noteId } = getNoteSchema.parse(req.params);
+    const note = await getNoteService(noteId, req.authorizedUser!);
+    return res.status(200).json({ message: 'Note Retrieved', note: note });
   } catch (err) {
     next(err);
   }

@@ -12,3 +12,7 @@ export const grantAccessSchema = z.object({
   userEmail: z.string(),
   noteId: z.string(),
 });
+
+export const getNoteSchema = z.object({
+  noteId: z.string(),
+});

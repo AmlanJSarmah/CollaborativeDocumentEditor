@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import { Server as HttpServer } from 'node:http';
+import { authorizeSocket } from './socket.auth.js';
 
 export const initSocket = (httpServer: HttpServer) => {
   const io = new Server(httpServer, {
@@ -7,5 +8,8 @@ export const initSocket = (httpServer: HttpServer) => {
       origin: '*',
     },
   });
+
+  io.use(authorizeSocket);
+
   return io;
 };

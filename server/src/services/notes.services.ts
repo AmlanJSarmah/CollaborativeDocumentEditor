@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { redis } from '../lib/redis.js';
 import { AppError } from '../lib/error.js';
 import type { User, Note } from '../types/notes.types.js';
 
@@ -113,4 +114,39 @@ export const getAllNotesService = async (user: User) => {
     createdNotes: createdNotes,
     grantedNotes: grantedNotes,
   };
+};
+
+export const getNoteService = async (
+  noteId: string,
+  user: User
+): Promise<Note> => {
+  // Verify if user is creator or in Access List
+  let valid = false;
+  const note = await prisma.note.findUnique({
+    where: {
+      id: noteId,
+    },
+  });
+  if (!note) throw new AppError(404, "Note doesn't exist");
+  const hasAccess = await prisma.accessList.findUnique({
+    where: {
+      userId_noteId: {
+        userId: user.id,
+        noteId: note.id,
+      },
+    },
+  });
+  if (note.creatorId == user.id || hasAccess) valid = true;
+  if (!valid)
+    throw new AppError(
+      403,
+      'Forbidden : You are not a creator / have not been granted access'
+    );
+  // If valid
+  const data = await redis.get(`note:${note.id}`);
+  // CACHE HIT
+  if (data) return JSON.parse(data);
+  // CACHE Miss
+  await redis.set(`note:${note.id}`, JSON.stringify(note));
+  return note;
 };

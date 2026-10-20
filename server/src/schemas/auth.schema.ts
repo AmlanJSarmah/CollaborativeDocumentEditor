@@ -16,3 +16,5 @@ export const authorizedUserSchmea = z.object({
   email: z.string(),
   id: z.string(),
 });
+
+export const validTokenSchema = z.string();
