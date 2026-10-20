@@ -15,6 +15,7 @@ import { initSocket } from './sockets/index.js';
 import authRouter from './routes/auth.routes.js';
 import { authorization } from './middleware/authorization.js';
 import notesRouter from './routes/notes.routes.js';
+import { registerNoteHandler } from './sockets/handlers/notes.handler.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -45,6 +46,7 @@ redis.on('error', error => {
 // Sockets
 io.on('connection', socket => {
   console.info(`INFO: Client connected via socket ${socket.id}`);
+  registerNoteHandler(io, socket);
 
   socket.on('disconnect', () => {
     console.info(`INFO: Client disconneced ${socket.id}`);

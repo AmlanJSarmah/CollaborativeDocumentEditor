@@ -13,7 +13,9 @@ export const authorizeSocket = (
 ): void => {
   try {
     const token = validTokenSchema
-      .parse(socket.handshake.auth.token)
+      .parse(
+        socket.handshake.auth.token || socket.handshake.headers.authorization
+      )
       .split(' ')[1];
     const authorizedUser = authorizedUserSchmea.parse(
       jwt.verify(token, env.JWT_PRIVATE_KEY)
