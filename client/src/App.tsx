@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { useState } from "react"
 import type { FormEvent, ReactNode } from "react"
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom"
-import { ArrowRight, Check, ChevronRight, Eye, EyeOff, FileText, Layers3, LockKeyhole, Mail, Sparkles, Users } from "lucide-react"
+import { ArrowRight, Check, Eye, EyeOff, FileText, Layers3, LockKeyhole, Mail, Sparkles, Users } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -9,40 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-
-const API_BASE = import.meta.env.DEV ? "/api/v1" : "http://localhost:8080/api/v1"
-const TOKEN_KEY = "collabdoc.auth-token"
-
-type AuthContextValue = {
-  token: string | null
-  signIn: (token: string) => void
-  signOut: () => void
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
-
-function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) throw new Error("useAuth must be used within AuthProvider")
-  return context
-}
-
-function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState(() => window.localStorage.getItem(TOKEN_KEY))
-  const value = useMemo<AuthContextValue>(() => ({
-    token,
-    signIn: nextToken => {
-      window.localStorage.setItem(TOKEN_KEY, nextToken)
-      setToken(nextToken)
-    },
-    signOut: () => {
-      window.localStorage.removeItem(TOKEN_KEY)
-      setToken(null)
-    },
-  }), [token])
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
+import { API_BASE } from "@/lib/api"
+import { AuthProvider, useAuth } from "@/lib/auth"
+import { NoteEditor } from "@/pages/note-editor"
+import { WorkspaceHome } from "@/pages/workspace"
 
 function Brand({ light = false }: { light?: boolean }) {
   return (
@@ -222,45 +192,8 @@ function SignUpPage() {
   )
 }
 
-function HomePage() {
-  const { token, signOut } = useAuth()
-  const navigate = useNavigate()
-  const [checking, setChecking] = useState(true)
-  const [authorized, setAuthorized] = useState(false)
-
-  useEffect(() => {
-    if (!token) return
-    let active = true
-    fetch(`${API_BASE}/`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(response => {
-        if (response.status === 401 || response.status === 403) {
-          signOut()
-          return
-        }
-        if (!response.ok) throw new Error("Health check failed")
-        if (active) setAuthorized(true)
-      })
-      .catch(() => {
-        if (active) signOut()
-      })
-      .finally(() => { if (active) setChecking(false) })
-    return () => { active = false }
-  }, [token, signOut])
-
-  if (!token) return <Navigate to="/signin" replace />
-  if (checking) return <div className="grid min-h-svh place-items-center bg-[#f7f7f5] text-sm text-muted-foreground">Opening your workspace…</div>
-  if (!authorized) return <Navigate to="/signin" replace />
-
-  return (
-    <main className="min-h-svh bg-[#f7f7f5]">
-      <header className="flex h-20 items-center justify-between border-b border-border/70 bg-white px-6 sm:px-10"><Brand /><Button variant="outline" onClick={() => { signOut(); navigate("/signin", { replace: true }) }}>Sign out</Button></header>
-      <section className="mx-auto max-w-6xl px-6 py-12 sm:px-10"><p className="text-sm font-medium text-primary">Your workspace</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Home</h1><p className="mt-2 text-muted-foreground">Your collaborative space is ready.</p><div className="mt-8 rounded-2xl border border-dashed border-border bg-white/70 px-6 py-20 text-center"><div className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><FileText className="size-5" /></div><h2 className="mt-4 font-medium">Your space is ready for what&apos;s next</h2><p className="mt-1 text-sm text-muted-foreground">Documents and projects will appear here.</p><div className="mt-5 inline-flex items-center gap-1 text-xs font-medium text-emerald-700"><span className="size-1.5 rounded-full bg-emerald-500" /> Connected securely <ChevronRight className="size-3.5" /></div></div></section>
-    </main>
-  )
-}
-
 function AppRoutes() {
-  return <Routes><Route path="/" element={<HomePage />} /><Route path="/signin" element={<SignInPage />} /><Route path="/signup" element={<SignUpPage />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes>
+  return <Routes><Route path="/" element={<WorkspaceHome />} /><Route path="/notes/:noteId" element={<NoteEditor />} /><Route path="/signin" element={<SignInPage />} /><Route path="/signup" element={<SignUpPage />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes>
 }
 
 export function App() {
