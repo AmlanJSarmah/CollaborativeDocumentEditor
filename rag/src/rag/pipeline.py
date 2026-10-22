@@ -24,7 +24,7 @@ def index_notes(note_id: str, content: str, title: str = "Untitled") -> int:
 
 def query_notes(note_id: str, question: str, chat_history: list[dict] = []):
     # History
-    history_text = "\n".join([f"{msg['role'].caplialize()} : {msg['content']}" for msg in chat_history])
+    history_text = "\n".join([f"{msg['role'].capitalize()} : {msg['content']}" for msg in chat_history])
     # Top k similar results
     search_query = f"{chat_history[-1]['content']} {question}" if chat_history else question
     results = vector_store.similarity_search(query=search_query, k=3, filter={"note_id": note_id})
