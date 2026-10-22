@@ -1,3 +1,5 @@
 langchain
 langchain-ollama
 fastapi[standard]
+chromadb
+langchain-chroma
