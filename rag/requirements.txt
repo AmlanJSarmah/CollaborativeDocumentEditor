@@ -3,3 +3,4 @@ langchain-ollama
 fastapi[standard]
 chromadb
 langchain-chroma
+langchain-text-splitters
