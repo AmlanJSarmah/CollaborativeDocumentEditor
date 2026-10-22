@@ -22,9 +22,12 @@ def index_notes(note_id: str, content: str, title: str = "Untitled") -> int:
     vector_store.add_documents(chuncks)
     return len(chuncks)
 
-def query_notes(note_id: str, question: str):
+def query_notes(note_id: str, question: str, chat_history: list[dict] = []):
+    # History
+    history_text = "\n".join([f"{msg['role'].caplialize()} : {msg['content']}" for msg in chat_history])
     # Top k similar results
-    results = vector_store.similarity_search(query=question, k=3, filter={"note_id": note_id})
+    search_query = f"{chat_history[-1]['content']} {question}" if chat_history else question
+    results = vector_store.similarity_search(query=search_query, k=3, filter={"note_id": note_id})
     if not results:
         return ("Sorry, our inhouse llm only answers questions relevant to the document. Please report to the developers if your question is relevant to the document.", [])
     # Format Context
@@ -37,6 +40,9 @@ def query_notes(note_id: str, question: str):
         If the answer is not contained in the context, say "I couldn't find that in the note."
         Keep your answer concise and factual.
 
+        Converstaion History:
+        {history}
+
         Context:
         {context}
 
@@ -44,10 +50,17 @@ def query_notes(note_id: str, question: str):
         Answer:
     """)
     chain = prompt | llm
-    response = chain.invoke({"context": context_text, "question": question})
+    response = chain.invoke({"context": context_text, "history": history_text or "No previous conversations","question": question})
     return response.content, sources
 
-# note = "ACID properties are a set of four core guarantees that ensure database transactions are processed reliably and maintain data integrity, even during system crashes or errors."
-# index_notes("abc", note, "ACID")
-# print(query_notes("abc", "What are ACID properties ?"))
-# print(query_notes("abc", "hello there how are you"))
+#note = """
+#ACID properties ensure database transaction reliability, the properties are:
+#- Atomicity: Guarantees the transaction succeeds entirely or fails completely (All-or-Nothing).
+#- Consistency: Ensures data transitions strictly from one valid state to another, upholding rules.
+#- Isolation: Executes concurrent transactions independently without interference.
+#- Durability: Permanently saves committed data, even through system crashes.
+#"""
+
+#index_notes("abc", note, "ACID")
+#print(query_notes("abc", "What are ACID properties ?"))
+#print(query_notes("abc", "Why are they important"))

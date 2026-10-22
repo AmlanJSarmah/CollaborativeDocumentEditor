@@ -4,5 +4,6 @@
 node_modules/
 dist/
 generated/
+chroma_db/
 .venv/
 __pycache__/
