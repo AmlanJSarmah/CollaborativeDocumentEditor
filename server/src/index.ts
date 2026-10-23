@@ -15,7 +15,9 @@ import { initSocket } from './sockets/index.js';
 import authRouter from './routes/auth.routes.js';
 import { authorization } from './middleware/authorization.js';
 import notesRouter from './routes/notes.routes.js';
+import ragRouter from './routes/rag.routes.js';
 import { registerNoteHandler } from './sockets/handlers/notes.handler.js';
+import { ingestNoteService } from './services/rag.service.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -28,6 +30,8 @@ app.use(express.json());
 app.use('/api/v1/auth/', authRouter);
 
 app.use('/api/v1/notes/', authorization, notesRouter);
+
+app.use('/api/v1/rag', authorization, ragRouter);
 
 app.get('/api/v1', authorization, (_req, res) => {
   res.status(200).json({
@@ -61,6 +65,7 @@ io.on('connection', async socket => {
           data: { data: note.data },
         });
         await redis.del(`lock:note:${lockedNoteId}`);
+        ingestNoteService(note.id, note.data, note.title);
         io.to(`note:${lockedNoteId}`).emit('lock:released', {
           noteId: lockedNoteId,
         });

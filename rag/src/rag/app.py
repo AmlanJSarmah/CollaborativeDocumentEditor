@@ -13,7 +13,7 @@ def helth_check():
 
 @app.post('/notes/index', response_model=IndexNoteResponse, status_code=200)
 def index_notes_controller(req: IndexNoteRequest):
-    count = index_notes(req.note_id, req.note_id, req.title)
+    count = index_notes(req.note_id, req.content, req.title)
     return {"message": "File Ingested", "note_id": req.note_id, "chuncks_count": count}
 
 @app.post('/notes/query', response_model=QueryNoteResponse, status_code=200)

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import type { FormEvent } from "react"
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom"
 import { io } from "socket.io-client"
-import { ArrowLeft, Check, Circle, Cloud, FileText, Layers3, LoaderCircle, LockKeyhole, LockKeyholeOpen, Mail, Users, Wifi, WifiOff, X } from "lucide-react"
+import { ArrowLeft, Check, Circle, Cloud, FileText, Layers3, LoaderCircle, LockKeyhole, LockKeyholeOpen, Mail, MessageCircle, Users, Wifi, WifiOff, X } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { apiRequest, getUserId, SOCKET_URL, type Note } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
+import { NoteChat } from "@/pages/note-chat"
 
 type LockState = { lockedBy: string | null; message: string }
 
@@ -31,6 +32,7 @@ export function NoteEditor() {
   const [shareBusy, setShareBusy] = useState(false)
   const [shareError, setShareError] = useState("")
   const [shareSuccess, setShareSuccess] = useState("")
+  const [chatOpen, setChatOpen] = useState(false)
   const socketRef = useRef<ReturnType<typeof io> | null>(null)
 
   useEffect(() => {
@@ -201,7 +203,7 @@ export function NoteEditor() {
     <main className="min-h-svh bg-[#f7f7f5]">
       <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-border/70 bg-white/95 px-4 backdrop-blur sm:px-8">
         <div className="flex min-w-0 items-center gap-4"><Button variant="ghost" size="icon" aria-label="Back to notes" onClick={() => navigate("/")}><ArrowLeft className="size-4" /></Button><span className="hidden h-7 w-px bg-border sm:block" /><Link to="/" className="hidden sm:block"><span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Layers3 className="size-4" /></span></Link><div className="min-w-0"><h1 className="truncate text-sm font-semibold text-foreground">{note?.title || "Opening note…"}</h1><p className="text-[11px] text-muted-foreground">{connected ? "Live collaboration" : "Connecting…"}</p></div></div>
-        <div className="flex items-center gap-2 sm:gap-3"><div className={`hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium sm:inline-flex ${connected ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>{connected ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}{connected ? "Connected" : "Reconnecting"}</div>{isOwner && <Button variant="outline" className="h-9 gap-2" onClick={() => { setShareOpen(true); setShareError(""); setShareSuccess("") }}><Users className="size-4" /><span className="hidden sm:inline">Share</span></Button>}{ownsLock ? <Button variant="outline" className="h-9 gap-2 border-amber-300 text-amber-900 hover:bg-amber-50" onClick={releaseLock}><LockKeyholeOpen className="size-4" /><span className="hidden sm:inline">Release lock</span></Button> : <Button className="h-9 gap-2" onClick={requestLock} disabled={!connected || claimPending || Boolean(lock.lockedBy)}>{claimPending ? <LoaderCircle className="size-4 animate-spin" /> : <LockKeyhole className="size-4" />}{claimPending ? "Requesting…" : "Edit note"}</Button>}</div>
+        <div className="flex items-center gap-2 sm:gap-3"><div className={`hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium sm:inline-flex ${connected ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>{connected ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}{connected ? "Connected" : "Reconnecting"}</div><Button variant={chatOpen ? "secondary" : "outline"} size="icon" aria-label={chatOpen ? "Close note assistant" : "Open note assistant"} title="Ask the note assistant" onClick={() => setChatOpen(open => !open)}><MessageCircle className="size-4" /></Button>{isOwner && <Button variant="outline" className="h-9 gap-2" onClick={() => { setShareOpen(true); setShareError(""); setShareSuccess("") }}><Users className="size-4" /><span className="hidden sm:inline">Share</span></Button>}{ownsLock ? <Button variant="outline" className="h-9 gap-2 border-amber-300 text-amber-900 hover:bg-amber-50" onClick={releaseLock}><LockKeyholeOpen className="size-4" /><span className="hidden sm:inline">Release lock</span></Button> : <Button className="h-9 gap-2" onClick={requestLock} disabled={!connected || claimPending || Boolean(lock.lockedBy)}>{claimPending ? <LoaderCircle className="size-4 animate-spin" /> : <LockKeyhole className="size-4" />}{claimPending ? "Requesting…" : "Edit note"}</Button>}</div>
       </header>
 
       <section className="mx-auto max-w-5xl px-4 py-7 sm:px-8 sm:py-10">
@@ -215,6 +217,7 @@ export function NoteEditor() {
       </section>
 
       {shareOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onMouseDown={event => { if (event.target === event.currentTarget) setShareOpen(false) }}><section role="dialog" aria-modal="true" aria-labelledby="share-note-title" className="w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-xl"><div className="flex items-start justify-between"><div><h2 id="share-note-title" className="text-lg font-semibold text-foreground">Share this note</h2><p className="mt-1 text-sm text-muted-foreground">Invite a Folio user by their account email.</p></div><button type="button" onClick={() => setShareOpen(false)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted" aria-label="Close"><X className="size-4" /></button></div>{shareError && <Alert variant="destructive" className="mt-4"><AlertDescription>{shareError}</AlertDescription></Alert>}{shareSuccess && <Alert className="mt-4 border-emerald-200 bg-emerald-50 text-emerald-900"><AlertDescription>{shareSuccess}</AlertDescription></Alert>}<form className="mt-5 space-y-4" onSubmit={event => void shareNote(event)}><label className="relative block"><Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" /><Input type="email" autoFocus value={shareEmail} onChange={event => setShareEmail(event.target.value)} placeholder="teammate@example.com" aria-label="User email" className="h-11 pl-9" required /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setShareOpen(false)}>Done</Button><Button type="submit" disabled={shareBusy || !shareEmail.trim()}>{shareBusy ? "Sharing…" : "Grant access"}</Button></div></form></section></div>}
+      {chatOpen && note && token && <NoteChat key={`${userId ?? "account"}:${note.id}`} noteId={note.id} userId={userId ?? "account"} token={token} onClose={() => setChatOpen(false)} />}
     </main>
   )
 }

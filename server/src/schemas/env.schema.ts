@@ -6,4 +6,5 @@ export const envSchema = z.object({
   PORT: z.coerce.number(),
   JWT_PRIVATE_KEY: z.string(),
   REDIS_PORT: z.coerce.number(),
+  RAG_API_URL: z.string(),
 });

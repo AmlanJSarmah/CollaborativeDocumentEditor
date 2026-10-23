@@ -1,6 +1,7 @@
 import type { Socket, Server } from 'socket.io';
 import { redis } from '../../lib/redis.js';
 import { prisma } from '../../lib/prisma.js';
+import { ingestNoteService } from '../../services/rag.service.js';
 
 export const registerNoteHandler = (io: Server, socket: Socket) => {
   socket.on('note:join', async (data: { noteId: string }) => {
@@ -65,6 +66,7 @@ export const registerNoteHandler = (io: Server, socket: Socket) => {
       });
       await redis.del(`lock:note:${noteId}`);
       socket.data.heldLocks.delete(noteId);
+      ingestNoteService(note.id, note.data, note.title);
       io.to(`note:${noteId}`).emit('lock:released', { noteId });
     }
   });
